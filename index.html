@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Salary & Expense Tracker</title>
+    <style>
+        /* Animated Background */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            color: #333;
+            background: linear-gradient(-45deg, #007bff, #6a11cb, #ff416c, #ff4b2b);
+            background-size: 400% 400%;
+            animation: backgroundAnimation 10s ease infinite;
+        }
+
+        @keyframes backgroundAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #fff;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            animation: fadeIn 1.5s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h1, h2, h3 {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        input, select, button {
+            width: calc(100% - 20px);
+            margin-bottom: 10px;
+            padding: 10px;
+            font-size: 1rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        button {
+            background-color: #007bff;
+            color: #fff;
+            cursor: pointer;
+            border: none;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+            transform: scale(1.05);
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .balance-expense-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-top: 20px;
+        }
+
+        .balance-box, .expense-box {
+            width: 48%;
+            padding: 15px;
+            background: #e9ecef;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .balance {
+            font-size: 1.7rem;
+            font-weight: bold;
+            color: #28a745;
+        }
+
+        .expenses {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #dc3545;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        li {
+            padding: 10px;
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            margin-bottom: 8px;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        li.expense { border-left: 5px solid #dc3545; }
+
+        li button {
+            background: none;
+            color: red;
+            cursor: pointer;
+            font-size: 1.2rem;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>💰 Salary & Expense Tracker</h1>
+
+        <!-- Choose Currency Unit -->
+        <h3>Select Currency</h3>
+        <select id="currency-unit" onchange="setCurrency()">
+            <option value="₵">Cedis (₵)</option>
+            <option value="$">Dollars ($)</option>
+            <option value="€">Euros (€)</option>
+        </select>
+
+        <!-- Salary Section -->
+        <h3>Enter Your Salary</h3>
+        <input type="number" id="salary" placeholder="Enter your salary" min="0">
+        <button onclick="setSalary()">Set Salary</button>
+
+        <!-- Expense Section -->
+        <h3>Add Expense</h3>
+        <input type="text" id="expense-name" placeholder="Expense name">
+        <input type="number" id="expense-amount" placeholder="Expense amount" min="0">
+        <button onclick="addExpense()">Add Expense</button>
+
+        <!-- Balance and Expenses Side by Side -->
+        <div class="balance-expense-container">
+            <div class="balance-box">
+                <h3>Balance</h3>
+                <div class="balance" id="balance">0.00</div>
+            </div>
+            <div class="expense-box">
+                <h3>Total Expenses</h3>
+                <div class="expenses" id="total-expenses">0.00</div>
+            </div>
+        </div>
+
+        <!-- Expenses List -->
+        <h2>Expenses</h2>
+        <ul id="expenses-list"></ul>
+    </div>
+
+    <script>
+        let currencyUnit = localStorage.getItem('currencyUnit') || '₵';
+        let salary = JSON.parse(localStorage.getItem('salary')) || 0;
+        let expenses = JSON.parse(localStorage.getItem('expenses')) || [];
+
+        // Set Currency
+        function setCurrency() {
+            currencyUnit = document.getElementById('currency-unit').value;
+            localStorage.setItem('currencyUnit', currencyUnit);
+            updateUI();
+        }
+
+        // Set Salary
+        function setSalary() {
+            const salaryInput = document.getElementById('salary');
+            const enteredSalary = parseFloat(salaryInput.value);
+
+            if (isNaN(enteredSalary) || enteredSalary <= 0) {
+                alert("Please enter a valid salary amount.");
+                return;
+            }
+
+            salary = enteredSalary;
+            localStorage.setItem('salary', JSON.stringify(salary));
+            salaryInput.value = '';
+            updateUI();
+        }
+
+        // Add Expense
+        function addExpense() {
+            const expenseName = document.getElementById('expense-name').value.trim();
+            const expenseAmount = parseFloat(document.getElementById('expense-amount').value);
+
+            if (!expenseName || isNaN(expenseAmount) || expenseAmount <= 0) {
+                alert("Please enter a valid expense name and amount.");
+                return;
+            }
+
+            expenses.push({ id: Date.now(), name: expenseName, amount: expenseAmount });
+            localStorage.setItem('expenses', JSON.stringify(expenses));
+            document.getElementById('expense-name').value = '';
+            document.getElementById('expense-amount').value = '';
+            updateUI();
+        }
+
+        // Update UI
+        function updateUI() {
+            const expensesList = document.getElementById('expenses-list');
+            const balanceElement = document.getElementById('balance');
+            const totalExpensesElement = document.getElementById('total-expenses');
+
+            expensesList.innerHTML = '';
+            let totalExpenses = 0;
+
+            expenses.forEach(expense => {
+                totalExpenses += expense.amount;
+
+                const li = document.createElement('li');
+                li.className = 'expense';
+                li.innerHTML = `
+                    <span>${expense.name}: ${currencyUnit}${expense.amount.toFixed(2)}</span>
+                    <button onclick="deleteExpense(${expense.id})">&times;</button>
+                `;
+                expensesList.appendChild(li);
+            });
+
+            const balance = salary - totalExpenses;
+            balanceElement.textContent = `${currencyUnit}${balance.toFixed(2)}`;
+            totalExpensesElement.textContent = `${currencyUnit}${totalExpenses.toFixed(2)}`;
+        }
+
+        // Delete an Expense
+        function deleteExpense(id) {
+            expenses = expenses.filter(expense => expense.id !== id);
+            localStorage.setItem('expenses', JSON.stringify(expenses));
+            updateUI();
+        }
+
+        // Initialize UI
+        updateUI();
+    </script>
+</body>
+</html>
